@@ -1,0 +1,123 @@
+// Prisma Schema for Local Development (SQLite Fallback)
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  username     String        @unique
+  passwordHash String
+  avatarUrl    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  memberships            GroupMember[]
+  ownedGroups            Group[]           @relation("GroupOwner")
+  sessions               Session[]
+  friends                Friendship[]      @relation("UserFriends")
+  friendOf               Friendship[]      @relation("FriendOfUsers")
+  sentFriendRequests     FriendRequest[]   @relation("SentFriendRequests")
+  receivedFriendRequests FriendRequest[]   @relation("ReceivedFriendRequests")
+  sentInvitations        GroupInvitation[] @relation("GroupInvitedBy")
+  receivedInvitations    GroupInvitation[] @relation("GroupInvitedUser")
+
+  @@index([email])
+  @@index([username])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Friendship {
+  id        String   @id @default(uuid())
+  userId    String
+  friendId  String
+  status    String   @default("ACCEPTED")
+  createdAt DateTime @default(now())
+
+  user      User     @relation("UserFriends", fields: [userId], references: [id], onDelete: Cascade)
+  friend    User     @relation("FriendOfUsers", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+}
+
+model FriendRequest {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+
+  sender     User     @relation("SentFriendRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User     @relation("ReceivedFriendRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Group {
+  id          String            @id @default(uuid())
+  name        String
+  description String?
+  ownerId     String
+  owner       User              @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  members     GroupMember[]
+  invitations GroupInvitation[]
+
+  @@index([ownerId])
+}
+
+model GroupMember {
+  id       String   @id @default(uuid())
+  groupId  String
+  userId   String
+  role     String   @default("MEMBER")
+  joinedAt DateTime @default(now())
+
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+}
+
+model GroupInvitation {
+  id        String   @id @default(uuid())
+  groupId   String
+  inviterId String
+  inviteeId String
+  role      String   @default("MEMBER")
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  inviter   User     @relation("GroupInvitedBy", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitee   User     @relation("GroupInvitedUser", fields: [inviteeId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, inviteeId])
+  @@index([groupId])
+  @@index([inviteeId])
+}
