@@ -1,4 +1,4 @@
-﻿services:
+services:
   # TOMO Backend API & Real-Time Socket Service
   - type: web
     name: tomo-backend
@@ -27,6 +27,25 @@
         generateValue: true
       - key: CHAT_MESSAGE_TTL_SECONDS
         value: 86400
+
+  # TOMO Frontend Web Application (Static Site)
+  - type: web
+    name: tomo-frontend
+    env: static
+    plan: free
+    region: oregon
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://tomo-backend-7k0l.onrender.com/api
+      - key: VITE_SOCKET_URL
+        value: https://tomo-backend-7k0l.onrender.com
 
 databases:
   # Free Managed PostgreSQL Database
