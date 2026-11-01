@@ -31,7 +31,7 @@ services:
   # TOMO Frontend Web Application (Static Site)
   - type: web
     name: tomo-frontend
-    env: static
+    runtime: static
     plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
