@@ -6,17 +6,23 @@ let redisClient;
 
 export async function initRedis() {
   return new Promise((resolve) => {
-    const realClient = new Redis({
-      host: ENV.REDIS_HOST,
-      port: ENV.REDIS_PORT,
-      password: ENV.REDIS_PASSWORD,
+    const redisOptions = {
       maxRetriesPerRequest: 1,
       retryStrategy(times) {
-        if (times > 2) return null; // do not endlessly retry if no local redis daemon
+        if (times > 2) return null; // do not endlessly retry if no redis daemon
         return 500;
       },
       enableOfflineQueue: false,
-    });
+    };
+
+    const realClient = process.env.REDIS_URL
+      ? new Redis(process.env.REDIS_URL, redisOptions)
+      : new Redis({
+          host: ENV.REDIS_HOST,
+          port: ENV.REDIS_PORT,
+          password: ENV.REDIS_PASSWORD,
+          ...redisOptions,
+        });
 
     let settled = false;
 

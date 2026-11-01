@@ -10,8 +10,25 @@ import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
+const isOriginAllowed = (origin, callback) => {
+  if (!origin) return callback(null, true);
+  const allowed = [
+    ENV.CLIENT_URL,
+    ...(ENV.CLIENT_URL ? ENV.CLIENT_URL.split(',').map((s) => s.trim()) : []),
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+  ];
+  if (allowed.includes('*') || allowed.includes(origin)) {
+    return callback(null, true);
+  }
+  if (/^https:\/\/.*\.onrender\.com$/.test(origin) || /^https:\/\/.*\.vercel\.app$/.test(origin) || /^http:\/\/localhost:\d+$/.test(origin)) {
+    return callback(null, true);
+  }
+  return callback(null, true);
+};
+
 app.use(cors({
-  origin: [ENV.CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: isOriginAllowed,
   credentials: true,
 }));
 

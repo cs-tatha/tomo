@@ -158,6 +158,42 @@ Frontend runs by default at **`http://localhost:5173`**.
 
 ---
 
+## 🚀 Deploy to Render (Backend & PostgreSQL Database)
+
+This repository includes a native [render.yaml](render.yaml) blueprint that automatically provisions both the **PostgreSQL Database** and the **Node.js Web Service** on Render with zero configuration.
+
+### Method A: 1-Click Render Blueprint (Recommended)
+1. Go to your [Render Dashboard](https://dashboard.render.com/).
+2. Click **New +** &rarr; **Blueprint**.
+3. Select your GitHub repository (`cs-tatha/tomo`).
+4. Render will read `render.yaml` and display two components:
+   * **`tomo-database`** (Free Managed PostgreSQL)
+   * **`tomo-backend`** (Free Web Service for API & WebSockets)
+5. Click **Apply**.
+   * Render automatically sets up PostgreSQL, injects `DATABASE_URL`, runs `preparePrisma.js` to create the schema, and starts your backend!
+
+### Method B: Manual Render Deployment
+If you prefer configuring services individually:
+1. **Create PostgreSQL Database**:
+   * On Render, click **New +** &rarr; **PostgreSQL**.
+   * Name: `tomo-database`, Database: `tomo`, User: `tomo_user`. Select the **Free** plan.
+   * Copy the **Internal Database URL**.
+2. **Create Web Service**:
+   * Click **New +** &rarr; **Web Service** &rarr; Connect repository `cs-tatha/tomo`.
+   * **Root Directory**: `backend`
+   * **Build Command**: `npm install && npm run build`
+   * **Start Command**: `npm start`
+   * **Environment Variables**:
+     * `NODE_ENV`: `production`
+     * `DATABASE_URL`: *(paste Internal Database URL)*
+     * `CLIENT_URL`: `*` *(or your frontend URL)*
+     * `JWT_ACCESS_SECRET`: *(any long random string)*
+     * `JWT_REFRESH_SECRET`: *(any long random string)*
+     * `CHAT_MESSAGE_TTL_SECONDS`: `86400`
+3. Click **Deploy Web Service**. Render will build and expose your backend URL (e.g. `https://tomo-backend.onrender.com`).
+
+---
+
 ## 🧪 Automated Test Suite
 
 TOMO comes with automated end-to-end integration test suites:
